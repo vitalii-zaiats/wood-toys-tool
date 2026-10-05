@@ -9,9 +9,9 @@ const BACKLASH = 0.15; // mm of play between meshing gear teeth
 
 // Engraves the part number in the first free spot, scanning up from the bottom-left.
 // Prefers a spot clear of other engraving and joints, but will settle for one clear of holes.
-function autoLabel(id: number, outline: Poly, holes: Poly[], engrave: Poly[], t: number): Poly[] {
+function autoLabel(id: number, outline: Poly, holes: Poly[], marks: Poly[], t: number): Poly[] {
   const label = String(id), lw = text7Width(label, LAB), pad = 1.5;
-  const b = bbox([outline]), holeBoxes = holes.map(h => bbox([h])), markBoxes = engrave.map(l => bbox([l]));
+  const b = bbox([outline]), holeBoxes = holes.map(h => bbox([h])), markBoxes = marks.map(l => bbox([l]));
   // Last resort for narrow parts: sit close to the edge.
   for (const [taken, grow] of [[[...holeBoxes, ...markBoxes], t + 1], [holeBoxes, t + 1], [holeBoxes, 0.5]] as const) {
     for (let y = b.y0; y + LAB <= b.y1; y += 2) {
@@ -39,7 +39,7 @@ function testComb(id: number, t: number): Part {
     const label = d === 0 ? "0" : (d > 0 ? "+" : "-") + "." + Math.round(Math.abs(d) * 10);
     engrave.push(...text7(label, 3 + pitch / 2 + i * pitch, 3, 4, true));
   });
-  return { id, name: "Тестова гребінка", outline: clean(P.pts), holes: [], engrave };
+  return { id, name: "Тестова гребінка", outline: clean(P.pts), holes: [], engrave, fills: [] };
 }
 
 // Turns a description into concrete parts for one plywood thickness and scale.
@@ -118,6 +118,7 @@ export function buildPuzzle(spec: PuzzleSpec, par: { t: number; scale: number })
   function marksOf(m: MarkSpec): Poly[] {
     if (typeof m !== "object" || m === null) throw new Error(`${where}: гравіювання має бути об'єктом`);
     if ("line" in m) return [list(m.line, "line").map(pt)];
+    if ("fill" in m) return [];
     if (isShape(m)) { const p = shapeOf(m); return [[...p, p[0]]]; }
     if ("text" in m) { const [x, y] = pt(m.at); return text7(String(m.text), x, y, num(m.h), m.center ?? false); }
     throw new Error(`${where}: невідомий тип гравіювання`);
@@ -132,8 +133,9 @@ export function buildPuzzle(spec: PuzzleSpec, par: { t: number; scale: number })
     const outline = up(flip(drawn));
     const holes = list(p.holes, "holes").map(h => up(flip(shapeOf(h))));
     const engrave = list(p.engrave, "engrave").flatMap(marksOf).map(q => up(flip(q)));
-    if (p.label !== false) engrave.push(...autoLabel(p.id, outline, holes, engrave, par.t));
-    const part: Part = { id: p.id, name: String(p.name ?? `Деталь ${p.id}`), outline, holes, engrave };
+    const fills = list(p.engrave, "engrave").flatMap(m => (typeof m === "object" && m && "fill" in m ? [list(m.fill, "fill").map(l => up(flip(list(l, "fill").map(pt))))] : []));
+    if (p.label !== false) engrave.push(...autoLabel(p.id, outline, holes, [...engrave, ...fills.flat()], par.t));
+    const part: Part = { id: p.id, name: String(p.name ?? `Деталь ${p.id}`), outline, holes, engrave, fills };
     if (p.at) {
       const o = vec(p.at.o).map(v => v * s) as Vec3, ea = vec(p.at.ea), eb = vec(p.at.eb);
       part.basis = { o, ea, eb };

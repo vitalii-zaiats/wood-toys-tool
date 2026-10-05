@@ -153,6 +153,7 @@ export function PuzzlePage({ initial, slug, file, settings, onSettings }: Props)
           <div className="legend">
             <span><i style={{ color: "var(--cut)" }} />Різати</span>
             <span><i style={{ color: "var(--engrave)" }} />Гравіювати лінією</span>
+            {model.parts.some(p => p.fills.length > 0) && <span><i style={{ color: "#3b2412" }} />Гравіювати заливкою</span>}
           </div>
           <button className="dl" onClick={saveSvg}>Зберегти SVG</button>
           <p className="note">Файл відкривається в LightBurn, Inkscape або RDWorks.</p>

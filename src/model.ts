@@ -12,6 +12,8 @@ export interface Part {
   outline: Poly;
   holes: Poly[];
   engrave: Poly[];
+  // Area engraving: each entry is a set of loops filled with the even-odd rule.
+  fills: Poly[][];
   // Parts without a basis only exist on the cut sheet (e.g. the test comb).
   basis?: Basis;
   explode?: Vec3;

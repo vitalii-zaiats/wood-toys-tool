@@ -33,9 +33,11 @@ export type ShapeSpec =
   // Two gears mesh when their centres are (teeth1 + teeth2) * module / 2 apart.
   | { gear: { at: P2; teeth: Num; module: Num; phase?: Num } };
 
-// A shape used as a mark is engraved as its closed outline.
+// A shape used as a mark is engraved as its closed outline. `fill` is area engraving: the region
+// bounded by the loops (even-odd, so a loop inside another is an island left untouched) is burnt dark.
 export type MarkSpec =
   | ShapeSpec
+  | { fill: P2[][] }
   | { line: P2[] }
   | { text: string; at: P2; h: Num; center?: boolean }; // digits, "+", "-", "." only
 

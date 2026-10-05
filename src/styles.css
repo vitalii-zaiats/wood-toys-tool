@@ -88,3 +88,5 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--engrave);outlin
 @media (max-width:860px){.gallery{padding:32px 16px 48px}}
 @media (max-width:860px){.about{display:block}}
 .warn{color:var(--cut);font-weight:600}
+.sheet #engrave-fill path{fill:#3b2412;stroke:none}
+.legend{flex-wrap:wrap}

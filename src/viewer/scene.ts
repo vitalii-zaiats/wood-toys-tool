@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { Poly } from "../geometry/poly";
+import { area, type Poly } from "../geometry/poly";
 import type { PuzzleModel } from "../model";
 
 export type ViewMode = "built" | "exploded" | "steps";
@@ -60,6 +60,7 @@ export class PuzzleScene {
   private edgeMat = new THREE.MeshStandardMaterial({ color: 0x5b3a20, roughness: 0.9 });
   private hiFace = new THREE.MeshStandardMaterial({ map: this.woodTex, roughness: 0.82, emissive: 0x2550c9, emissiveIntensity: 0.18 });
   private engMat = new THREE.LineBasicMaterial({ color: 0x6b4426 });
+  private burnMat = new THREE.MeshStandardMaterial({ color: 0x3f2714, roughness: 1 });
   private mat: THREE.Mesh;
 
   // Throws when WebGL is unavailable. Pass live=false to render single frames with snapshot().
@@ -121,6 +122,15 @@ export class PuzzleScene {
         lg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
         inner.add(new THREE.LineSegments(lg, this.engMat));
       }
+      // area engraving: the largest loop of a group is its outer edge, the rest are islands
+      for (const loops of p.fills) {
+        const [outer, ...islands] = loops.slice().sort((a, b) => Math.abs(area(b)) - Math.abs(area(a)));
+        const burnt = shapeFrom(outer);
+        islands.forEach(l => burnt.holes.push(shapeFrom(l)));
+        const mesh2 = new THREE.Mesh(new THREE.ShapeGeometry(burnt), this.burnMat);
+        mesh2.position.z = t + 0.02;
+        inner.add(mesh2);
+      }
       const A = new THREE.Vector3(...p.basis.ea), B = new THREE.Vector3(...p.basis.eb), C = new THREE.Vector3().crossVectors(A, B);
       inner.matrixAutoUpdate = false;
       inner.matrix.makeBasis(A, B, C).setPosition(...p.basis.o);
@@ -155,7 +165,7 @@ export class PuzzleScene {
     cancelAnimationFrame(this.raf);
     this.clear();
     this.controls.dispose();
-    for (const o of [this.woodTex, this.matTex, this.faceMat, this.edgeMat, this.hiFace, this.engMat, this.mat.geometry, this.mat.material as THREE.Material]) o.dispose();
+    for (const o of [this.woodTex, this.matTex, this.faceMat, this.edgeMat, this.hiFace, this.engMat, this.burnMat, this.mat.geometry, this.mat.material as THREE.Material]) o.dispose();
     this.renderer.dispose();
     if (loseContext) this.renderer.forceContextLoss();
   }
