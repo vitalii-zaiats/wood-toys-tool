@@ -1,0 +1,89 @@
+:root{
+  --bg:#DCE2DA; --panel:#EEF1EC; --ink:#1F2A26; --muted:#5C6B64; --line:#B9C4BC;
+  --wood:#D7B98A; --cut:#D9361F; --engrave:#2550C9; --mat:#2F5D4B;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#18201D; --panel:#202A26; --ink:#E6ECE7; --muted:#9AA9A1; --line:#34423C; --cut:#FF5A40; --engrave:#6E92FF; color-scheme:dark;}}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.5 "Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif}
+#root{height:100%}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:100%}
+.stage{position:relative;min-height:0;overflow:hidden}
+#view{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}
+.title{position:absolute;left:28px;top:22px;pointer-events:none;max-width:70%}
+.title h1{font:700 clamp(28px,4.2vw,54px)/1.02 "Unbounded",system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+.title p{margin:.7em 0 0;color:var(--ink);max-width:34ch;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:15px}
+.modes{position:absolute;left:28px;bottom:24px;right:28px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px}
+.seg button{border:0;background:none;color:var(--ink);font:500 14px "Golos Text",sans-serif;padding:8px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.steps{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;max-width:440px}
+.steps span{font-size:14px;flex:1;min-width:0}
+.steps b{font-family:"Unbounded",sans-serif;font-weight:500;margin-right:6px}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:18px;cursor:pointer}
+.iconbtn:disabled{opacity:.35;cursor:default}
+aside{background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:26px 24px 28px}
+h2{font:500 15px/1.3 "Unbounded",sans-serif;margin:0 0 14px}
+section+section{margin-top:28px;padding-top:24px;border-top:1px solid var(--line)}
+.field{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline;margin-bottom:16px}
+.field label{font-weight:500}
+.field output{font-variant-numeric:tabular-nums;color:var(--muted)}
+.field input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--ink)}
+.field small{grid-column:1/-1;color:var(--muted);font-size:13px;line-height:1.4}
+.seed{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center}
+.seed label{font-weight:500}
+.seed input{min-width:0;width:100%;font:500 16px "Golos Text",sans-serif;font-variant-numeric:tabular-nums;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.seed .btn{grid-column:auto}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:500 14px "Golos Text",sans-serif;padding:9px 14px;cursor:pointer}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn:disabled{opacity:.45;cursor:default}
+.sheet{background:var(--wood);border-radius:6px;padding:8px;overflow-x:auto}
+.sheet svg{display:block;width:100%;height:auto}
+.sheet svg path{vector-effect:non-scaling-stroke;stroke-width:1.1px}
+.sheet #cut-inner path,.sheet #cut-outer path{stroke:#C42A15}
+.sheet #engrave path{stroke:#1F44B8;stroke-width:.8px}
+.meta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:8px}
+.legend{display:flex;gap:16px;font-size:13px;margin-top:10px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.dl{margin-top:16px;width:100%;border:0;border-radius:12px;padding:14px;background:var(--cut);color:#fff;font:600 16px "Golos Text",sans-serif;cursor:pointer}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+ol.parts{margin:0;padding:0;list-style:none;font-size:14px;columns:2;column-gap:16px}
+ol.parts li{break-inside:avoid;padding:3px 0}
+ol.parts li b{font-family:"Unbounded",sans-serif;font-weight:500;color:var(--engrave);display:inline-block;width:1.6em}
+.tips{font-size:14px;margin:0;padding-left:1.1em}
+.tips li{margin-bottom:6px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--engrave);outline-offset:2px}
+@media (max-width:860px){
+  html,body,#root{height:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  .stage{height:68vh;min-height:420px}
+  aside{border-left:0;border-top:1px solid var(--line)}
+  .title{left:18px;top:14px}
+  .title p{display:none}
+  .modes{left:14px;right:14px;bottom:14px}
+}
+
+.about{display:none;margin:0 0 24px;font-size:15px}
+.back{display:inline-block;pointer-events:auto;margin-bottom:10px;color:var(--ink);font-weight:500;font-size:14px;text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px}
+.gallery{max-width:1100px;margin:0 auto;padding:56px 28px 64px}
+.gallery header h1{font:700 clamp(32px,5vw,60px)/1.02 "Unbounded",system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+.gallery header p{max-width:52ch;margin:16px 0 0;color:var(--muted);font-size:18px}
+.cards{list-style:none;margin:40px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.card{display:block;width:100%;height:100%;text-align:left;font:inherit;color:var(--ink);text-decoration:none;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 10px 18px;cursor:pointer;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--ink)}
+.card:focus-visible{outline:2px solid var(--engrave);outline-offset:2px}
+.card .thumb{aspect-ratio:16/11;border-radius:10px;overflow:hidden;background:var(--bg);display:grid;place-items:center}
+.card .thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.card .thumb span{font-size:44px;color:var(--muted)}
+.card.open .thumb{border:1.5px dashed var(--line);background:none}
+.card h2{margin:14px 8px 4px;font-size:17px}
+.card p{margin:0 8px;color:var(--muted);font-size:14px;line-height:1.45}
+.card .count{display:block;margin:10px 8px 0;font-size:13px;font-variant-numeric:tabular-nums}
+.gallery .note{margin-top:20px;font-size:14px}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+@media (max-width:860px){.gallery{padding:32px 16px 48px}}
+@media (max-width:860px){.about{display:block}}
