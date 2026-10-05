@@ -82,6 +82,7 @@ export function PuzzlePage({ initial, slug, file, settings, onSettings }: Props)
   const steps = model.steps;
   const count = model.parts.filter(p => p.basis).length;
   const moving = model.parts.some(p => p.spin);
+  const maxT = spec.limits?.maxT, tooThick = maxT !== undefined && settings.t / settings.scale > maxT + 1e-9;
   const about = webgl
     ? `${spec.description ?? "Шип-паз, збирається без клею."} Деталей: ${count}. Крути модель мишею.`
     : "Цей браузер не підтримує WebGL, тож 3D-перегляд недоступний. Шаблон для різки працює.";
@@ -135,7 +136,9 @@ export function PuzzlePage({ initial, slug, file, settings, onSettings }: Props)
         <section>
           <h2>Під твою фанеру</h2>
           <Field id="t" label="Товщина фанери" value={settings.t} limits={LIMITS.t} output={fmt(settings.t, 1) + " мм"} onChange={set("t")}
-            hint="Міряй штангенциркулем: «3 мм» часто виявляються 2,8 або 3,2." />
+            hint={tooThick
+              ? <strong className="warn">Ця модель розрахована на фанеру до {fmt(maxT! * settings.scale, 1)} мм при такому розмірі. Зменш товщину або збільш розмір, інакше деталі не зійдуться.</strong>
+              : "Міряй штангенциркулем: «3 мм» часто виявляються 2,8 або 3,2."} />
           <Field id="k" label="Керф лазера" value={settings.kerf} limits={LIMITS.kerf} output={fmt(settings.kerf, 2) + " мм"} onChange={set("kerf")}
             hint="Ширина пропалу. Контури зсуваються на половину керфа, щоб пази вийшли точно в розмір." />
           <Field id="s" label="Розмір" value={settings.scale} limits={LIMITS.scale} onChange={set("scale")}

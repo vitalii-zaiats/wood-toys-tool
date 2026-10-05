@@ -63,6 +63,8 @@ export interface PuzzleSpec {
   description?: string;
   // Set when a built-in generator can make variations of this puzzle from a seed.
   generator?: { name: string; seed: number };
+  // The thickest plywood the model is designed for, in mm at scale 1 (thickness / scale must not exceed it).
+  limits?: { maxT?: number };
   params?: Record<string, Num>; // evaluated top to bottom, later ones may use earlier ones
   parts: PartSpec[];
   steps?: AssemblyStep[];

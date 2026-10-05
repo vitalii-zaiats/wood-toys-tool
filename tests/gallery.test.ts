@@ -56,15 +56,35 @@ function collisions(m: PuzzleModel, theta = 0): string[] {
   return bad;
 }
 
+// A model may declare the thickest plywood it is designed for; beyond that it is not expected to fit.
+const tooThick = (file: string, t: number, scale: number) => t / scale > (load(file).limits?.maxT ?? Infinity);
+
 describe.each(FILES)("gallery: %s", file => {
   it.each([[3, 1], [4.2, 1], [6, 0.7], [2, 1.8]])("parts do not run into each other (t=%s, scale=%s)", (t, scale) => {
+    if (tooThick(file, t, scale)) return;
     expect(collisions(buildPuzzle(load(file), { t, scale }))).toEqual([]);
   });
 
-  it.each([[3, 1], [6, 0.7], [2, 1.8]])("moving parts stay clear of everything through a full turn of the slowest shaft (t=%s, scale=%s)", (t, scale) => {
+  it.each([[3, 1], [4.2, 1], [6, 0.7], [2, 1.8]])("moving parts stay clear of everything through a full turn of the slowest shaft (t=%s, scale=%s)", (t, scale) => {
     const m = buildPuzzle(load(file), { t, scale });
-    if (!m.parts.some(p => p.spin)) return;
+    if (!m.parts.some(p => p.spin) || tooThick(file, t, scale)) return;
     for (const theta of TURN) expect(collisions(m, theta), `drive at ${theta.toFixed(2)} rad`).toEqual([]);
+  });
+
+  it("every hole sits inside its part with wood left around it", () => {
+    const edgeGap = (q: Pt, poly: Pt[]) => Math.min(...poly.map((a, i) => {
+      const b = poly[(i + 1) % poly.length], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+      const f = l2 ? Math.min(1, Math.max(0, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / l2)) : 0;
+      return Math.hypot(q[0] - a[0] - f * dx, q[1] - a[1] - f * dy);
+    }));
+    const thin: string[] = [];
+    for (const p of buildPuzzle(load(file), { t: 3, scale: 1 }).parts) {
+      p.holes.forEach((h, i) => {
+        const gap = Math.min(...h.map(q => (inPoly(q, p.outline) ? edgeGap(q, p.outline) : -1)));
+        if (gap < 1) thin.push(`${p.id} "${p.name}" hole ${i}: ${gap.toFixed(2)} mm to the edge`);
+      });
+    }
+    expect(thin).toEqual([]);
   });
 
   it("has a name, a description and steps that cover every placed part exactly once", () => {
@@ -93,6 +113,13 @@ describe("collision probe", () => {
 
   it("notices a gear turning at the wrong ratio", () => {
     expect(hits(spec => { for (const p of spec.parts) if (p.spin?.ratio === 0.25) p.spin.ratio = 0.3; })).toBeGreaterThan(0);
+  });
+
+  it("notices the globe's hand wheel geared to turn the wrong way", () => {
+    const spec = load("globe.json");
+    for (const p of spec.parts) if (p.spin?.ratio === -0.6) p.spin.ratio = 0.6;
+    const m = buildPuzzle(spec, { t: 3, scale: 1 });
+    expect(TURN.reduce((n, theta) => n + collisions(m, theta).length, 0)).toBeGreaterThan(0);
   });
 
   it("notices blades long enough to hit the ground", () => {
