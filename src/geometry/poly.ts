@@ -94,3 +94,23 @@ export function inPoly(pt: Pt, poly: Poly): boolean {
   }
   return ins;
 }
+
+// Involute spur gear centred on (cx, cy). Tooth 0 points along +x, shifted by `phase` tooth pitches.
+// `backlash` thins every tooth by that much at the pitch circle so mating gears do not bind.
+export function gear(cx: number, cy: number, teeth: number, module: number, phase = 0, backlash = 0): Poly {
+  const pa = (20 * Math.PI) / 180, r = (module * teeth) / 2, rb = r * Math.cos(pa), ra = r + module, rf = r - 1.25 * module;
+  const inv = (a: number) => Math.tan(a) - a;
+  const half = (Math.PI * module / 2 - backlash) / (2 * r);
+  // half-angle of the tooth at radius rho
+  const halfAt = (rho: number) => half + inv(pa) - inv(Math.acos(Math.min(1, rb / rho)));
+  const r0 = Math.max(rb, rf), N = 6, pts: Poly = [];
+  const put = (rho: number, a: number) => pts.push([cx + rho * Math.cos(a), cy + rho * Math.sin(a)]);
+  for (let k = 0; k < teeth; k++) {
+    const c = ((k + phase) * 2 * Math.PI) / teeth;
+    if (rf < rb) put(rf, c - halfAt(rb)); // below the base circle the flank is radial
+    for (let i = 0; i <= N; i++) { const rho = r0 + ((ra - r0) * i) / N; put(rho, c - halfAt(rho)); }
+    for (let i = N; i >= 0; i--) { const rho = r0 + ((ra - r0) * i) / N; put(rho, c + halfAt(rho)); }
+    if (rf < rb) put(rf, c + halfAt(rb));
+  }
+  return pts;
+}

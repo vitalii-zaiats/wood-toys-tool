@@ -1,10 +1,11 @@
-import { arch, bbox, circle, clean, inPoly, overlaps, path, rect, type Poly, type Pt } from "../geometry/poly";
+import { arch, bbox, circle, clean, gear, inPoly, overlaps, path, rect, type Poly, type Pt } from "../geometry/poly";
 import { text7, text7Width } from "../geometry/text7";
 import type { Part, PuzzleModel, Vec3 } from "../model";
 import { evaluate, type Env } from "./expr";
 import type { EdgeSpec, MarkSpec, Num, P2, P3, PuzzleSpec, ShapeSpec } from "./types";
 
 const LAB = 4; // part number height, mm
+const BACKLASH = 0.15; // mm of play between meshing gear teeth
 
 // Engraves the part number in the first free spot, scanning up from the bottom-left.
 // Prefers a spot clear of other engraving and joints, but will settle for one clear of holes.
@@ -101,13 +102,17 @@ export function buildPuzzle(spec: PuzzleSpec, par: { t: number; scale: number })
     if (out.length < 3) throw new Error(`${where}: контур має містити щонайменше три точки`);
     return out;
   }
-  const isShape = (v: object): v is ShapeSpec => "rect" in v || "arch" in v || "circle" in v || "poly" in v;
+  const isShape = (v: object): v is ShapeSpec => "rect" in v || "arch" in v || "circle" in v || "poly" in v || "gear" in v;
   function shapeOf(h: ShapeSpec): Poly {
     if (typeof h !== "object" || h === null) throw new Error(`${where}: отвір має бути об'єктом`);
     if ("rect" in h) { const [a, b, c, d] = list(h.rect, "rect").map(num); return rect(a, b, c, d); }
     if ("arch" in h) { const [a, b, c, d] = list(h.arch, "arch").map(num); return arch(a, b, c, d); }
     if ("circle" in h) { const [cx, cy, r] = list(h.circle, "circle").map(num); return circle(cx, cy, r); }
     if ("poly" in h) return list(h.poly, "poly").map(pt);
+    if ("gear" in h) {
+      const g = h.gear, [cx, cy] = pt(g.at);
+      return gear(cx, cy, Math.round(num(g.teeth)), num(g.module), g.phase === undefined ? 0 : num(g.phase), BACKLASH / s);
+    }
     throw new Error(`${where}: невідомий тип отвору`);
   }
   function marksOf(m: MarkSpec): Poly[] {
@@ -133,6 +138,7 @@ export function buildPuzzle(spec: PuzzleSpec, par: { t: number; scale: number })
       const o = vec(p.at.o).map(v => v * s) as Vec3, ea = vec(p.at.ea), eb = vec(p.at.eb);
       part.basis = { o, ea, eb };
       part.explode = p.explode ? (vec(p.explode).map(v => v * s) as Vec3) : [0, 0, 0];
+      if (p.spin) part.spin = { o: vec(p.spin.o).map(v => v * s) as Vec3, axis: vec(p.spin.axis), ratio: num(p.spin.ratio) };
       const ec = [ea[1] * eb[2] - ea[2] * eb[1], ea[2] * eb[0] - ea[0] * eb[2], ea[0] * eb[1] - ea[1] * eb[0]];
       for (const q of outline) for (const c of [0, par.t]) for (let i = 0; i < 3; i++) {
         const v = o[i] + ea[i] * q[0] + eb[i] * q[1] + ec[i] * c;

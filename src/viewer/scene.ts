@@ -5,7 +5,11 @@ import type { PuzzleModel } from "../model";
 
 export type ViewMode = "built" | "exploded" | "steps";
 
-interface PartGroup { id: number; wrap: THREE.Group; mesh: THREE.Mesh; ex: THREE.Vector3; f: number; vis: boolean }
+interface PartGroup {
+  id: number; wrap: THREE.Group; mesh: THREE.Mesh; ex: THREE.Vector3; f: number; vis: boolean;
+  // moving parts hang off a pivot placed on their axis
+  pivot?: THREE.Group; axis?: THREE.Vector3; ratio?: number;
+}
 
 function canvasTex(w: number, h: number, draw: (g: CanvasRenderingContext2D, w: number, h: number) => void) {
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -33,6 +37,9 @@ export class PuzzleScene {
   private step = 0;
   private raf = 0;
   private size = 0;
+  private playing = true;
+  private drive = 0; // angle of the mechanism's input, radians
+  private last = 0;
 
   private woodTex = canvasTex(512, 512, (g, w, h) => {
     g.fillStyle = "#dcbf92"; g.fillRect(0, 0, w, h);
@@ -117,8 +124,15 @@ export class PuzzleScene {
       const A = new THREE.Vector3(...p.basis.ea), B = new THREE.Vector3(...p.basis.eb), C = new THREE.Vector3().crossVectors(A, B);
       inner.matrixAutoUpdate = false;
       inner.matrix.makeBasis(A, B, C).setPosition(...p.basis.o);
-      const wrap = new THREE.Group(); wrap.add(inner); this.scene.add(wrap);
-      this.groups.push({ id: p.id, wrap, mesh, ex: new THREE.Vector3(...(p.explode ?? [0, 0, 0])), f: 0, vis: true });
+      const wrap = new THREE.Group(); this.scene.add(wrap);
+      const group: PartGroup = { id: p.id, wrap, mesh, ex: new THREE.Vector3(...(p.explode ?? [0, 0, 0])), f: 0, vis: true };
+      if (p.spin) {
+        const pivot = new THREE.Group(), back = new THREE.Group();
+        pivot.position.set(...p.spin.o); back.position.set(...p.spin.o).negate();
+        back.add(inner); pivot.add(back); wrap.add(pivot);
+        Object.assign(group, { pivot, axis: new THREE.Vector3(...p.spin.axis).normalize(), ratio: p.spin.ratio });
+      } else wrap.add(inner);
+      this.groups.push(group);
     }
     this.mat.position.y = model.bounds.minY - 0.05;
     this.controls.target.set(0, model.bounds.focusY, 0);
@@ -127,6 +141,9 @@ export class PuzzleScene {
     if (model.bounds.size !== this.size) { this.size = model.bounds.size; this.fit(); }
     this.apply(true);
   }
+
+  // Runs or pauses the mechanism of models that have moving parts.
+  setPlaying(playing: boolean) { this.playing = playing; }
 
   setView(mode: ViewMode, step: number) {
     this.mode = mode; this.step = step;
@@ -181,7 +198,13 @@ export class PuzzleScene {
       this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
       this.fit();
     }
-    for (const g of this.groups) { g.f += (this.target(g.id).f - g.f) * 0.12; g.wrap.position.copy(g.ex).multiplyScalar(g.f); }
+    const now = performance.now(), dt = Math.min(0.1, (now - (this.last || now)) / 1000);
+    this.last = now;
+    if (this.playing && this.mode !== "exploded") this.drive += dt * 1.6;
+    for (const g of this.groups) {
+      g.f += (this.target(g.id).f - g.f) * 0.12; g.wrap.position.copy(g.ex).multiplyScalar(g.f);
+      if (g.pivot) g.pivot.quaternion.setFromAxisAngle(g.axis!, this.drive * g.ratio!);
+    }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.raf = requestAnimationFrame(this.frame);

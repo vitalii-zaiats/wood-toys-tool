@@ -29,6 +29,7 @@ export function PuzzlePage({ initial, slug, file, settings, onSettings }: Props)
   const [mode, setMode] = useState<ViewMode>("built");
   const [step, setStep] = useState(0);
   const [webgl, setWebgl] = useState(true);
+  const [playing, setPlaying] = useState(true);
   const [note, setNote] = useState("");
   const [fileName, setFileName] = useState(file?.name ?? "");
   const fileHandle = useRef(file?.handle);
@@ -80,13 +81,14 @@ export function PuzzlePage({ initial, slug, file, settings, onSettings }: Props)
 
   const steps = model.steps;
   const count = model.parts.filter(p => p.basis).length;
+  const moving = model.parts.some(p => p.spin);
   const about = webgl
     ? `${spec.description ?? "Шип-паз, збирається без клею."} Деталей: ${count}. Крути модель мишею.`
     : "Цей браузер не підтримує WebGL, тож 3D-перегляд недоступний. Шаблон для різки працює.";
   return (
     <div className="app">
       <div className="stage">
-        <Viewer model={model} mode={mode} step={step} onUnsupported={onUnsupported} />
+        <Viewer model={model} mode={mode} step={step} playing={playing} onUnsupported={onUnsupported} />
         <div className="title">
           <a className="back" href="#">← Галерея</a>
           <h1>{model.name}</h1>
@@ -98,6 +100,11 @@ export function PuzzlePage({ initial, slug, file, settings, onSettings }: Props)
               <button key={m} aria-pressed={mode === m} onClick={() => pickMode(m)}>{label}</button>
             ))}
           </div>
+          {moving && mode !== "exploded" && (
+            <div className="seg">
+              <button aria-pressed={playing} onClick={() => setPlaying(!playing)}>{playing ? "❚❚ Механізм" : "▶ Механізм"}</button>
+            </div>
+          )}
           {mode === "steps" && (
             <div className="steps">
               <span><b>{step + 1}/{steps.length}</b>{steps[step].text}</span>

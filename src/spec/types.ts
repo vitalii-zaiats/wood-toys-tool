@@ -28,7 +28,10 @@ export type ShapeSpec =
   | { rect: [Num, Num, Num, Num] }   // x0, y0, x1, y1
   | { arch: [Num, Num, Num, Num] }   // rect with a semicircular top
   | { circle: [Num, Num, Num] }      // cx, cy, r
-  | { poly: P2[] };
+  | { poly: P2[] }
+  // Involute spur gear. Tooth 0 points along +a; `phase` turns it by that many tooth pitches.
+  // Two gears mesh when their centres are (teeth1 + teeth2) * module / 2 apart.
+  | { gear: { at: P2; teeth: Num; module: Num; phase?: Num } };
 
 // A shape used as a mark is engraved as its closed outline.
 export type MarkSpec =
@@ -43,6 +46,9 @@ export interface PartSpec {
   // The far face is the engraved one. Parts without `at` only appear on the cut sheet.
   at?: { o: P3; ea: P3; eb: P3 };
   explode?: P3;
+  // A moving part: turns about the axis through `o` by `ratio` times the drive angle.
+  // Meshing gears get ratios of opposite sign, inversely proportional to their tooth counts.
+  spin?: { o: P3; axis: P3; ratio: Num };
   outline: EdgeSpec[] | ShapeSpec;
   // Flip the finished part left-to-right, so one drawing serves both sides of a symmetric model.
   mirror?: boolean;

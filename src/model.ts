@@ -15,6 +15,8 @@ export interface Part {
   // Parts without a basis only exist on the cut sheet (e.g. the test comb).
   basis?: Basis;
   explode?: Vec3;
+  // Turns about the axis through `o` by `ratio` times the drive angle.
+  spin?: { o: Vec3; axis: Vec3; ratio: number };
 }
 
 export interface AssemblyStep { ids: number[]; text: string }
